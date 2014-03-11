@@ -55,7 +55,7 @@
          * Containers data that has been specified by the user.
          * @private
          */
-            _options: { file: null, from: null, into: null, config: null },
+        _options: { file: null, from: null, into: null, config: null },
 
         /**
          * @property _task
@@ -238,42 +238,62 @@
          */
         process: function process() {
 
-            // First we need to read the "config.yaml" file to access the API information.
-            fs.readFile(this._options.config, 'utf-8', function parseYamlConfig(error, data) {
+            if (typeof this._options.config == 'object') {
 
-                try {
-
-                    // Attempt to load and parse the YAML config file.
-                    var config = yaml.load(data);
-
-                    // Determine if the "apiKey" key is in the configuration.
-                    if (!('apiKey' in config)) {
-
-                        this._callbacks.error.method({
-                            code    : this._errorCodes.configKey,
-                            message : 'Cannot find "apiKey" in configuration!'
-                        });
-
-                        return false;
-
-                    }
-
-                    // Otherwise we can load the API key, and continue processing.
-                    this._apiKey = config.apiKey;
-                    this._convert.apply(this);
-
-                } catch (e) {
+                if (!('apiKey' in this._options.config)) {
 
                     this._callbacks.error.method({
-                        code    : this._errorCodes.invalidConfig,
-                        message : 'Unable to parse YAML configuration!'
+                        code    : this._errorCodes.configKey,
+                        message : 'Cannot find "apiKey" in configuration!'
                     });
 
                     return false;
 
                 }
 
-            }.bind(this));
+                this._apiKey = this._options.config.apiKey;
+                this._convert.apply(this);
+
+            } else {
+
+                // First we need to read the "config.yaml" file to access the API information.
+                fs.readFile(this._options.config, 'utf-8', function parseYamlConfig(error, data) {
+
+                    try {
+
+                        // Attempt to load and parse the YAML config file.
+                        var config = yaml.load(data);
+
+                        // Determine if the "apiKey" key is in the configuration.
+                        if (!('apiKey' in config)) {
+
+                            this._callbacks.error.method({
+                                code    : this._errorCodes.configKey,
+                                message : 'Cannot find "apiKey" in configuration!'
+                            });
+
+                            return false;
+
+                        }
+
+                        // Otherwise we can load the API key, and continue processing.
+                        this._apiKey = config.apiKey;
+                        this._convert.apply(this);
+
+                    } catch (e) {
+
+                        this._callbacks.error.method({
+                            code    : this._errorCodes.invalidConfig,
+                            message : 'Unable to parse YAML configuration!'
+                        });
+
+                        return false;
+
+                    }
+
+                }.bind(this));
+
+            }
 
         },
 
